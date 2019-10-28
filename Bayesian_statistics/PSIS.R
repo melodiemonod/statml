@@ -2,6 +2,9 @@ library("data.table")
 library(rstan) ### stan is used for VI
 library(loo)  ### loo is used for PSIS
 
+# Parts of this code has been copy-pasted from R code for "Yes, but Did It Work: Evaluating Variational Inference" in https://github.com/yao-yl/Evaluating-Variational-Inference
+# Copyright (c) 2018 Yuling Yao
+
 
 # change 
 setwd("/rds/general/user/mm3218/home/projects/CDT_modules/bayesian_stats")
@@ -28,6 +31,7 @@ mean_posterior = cov_posterior%*%(solve(cov0)%*%mean0 + t(x)%*%y/(sigma^2))
 
 
 ## BAYESIAN LINEAR REGRESSION
+
 stan_code='
 data {
 int <lower=0> n;
@@ -52,17 +56,18 @@ log_density=normal_lpdf(y |alpha + x * beta, 1.2)+normal_lpdf(alpha|mean_prior[1
 }
 '
 
-m=stan_model(model_code = stan_code)   # the function for PSIS re-weighting.
+m=stan_model(model_code = stan_code)   
 ip_weighted_average=function(lw, x){
   ip_weights=exp(lw-min(lw))
-  return(  t(ip_weights)%*%x /sum(ip_weights) )
+  return(  t(ip_weights)%*%x /sum(ip_weights))
 }
 
 
-## FIND k and PMSE
-tol = 0.00001 # choose relative tolerance for VI. The default in the published ADVI paper is 0.01.
-sim_N=100   # repeat simulations. 100 is enough as we can check the sd. The only uncertainty is stochastic optimization in ADVI
-I = 5 # true posterior and 4 priors
+## FIND k AND PMSE
+
+tol = 0.00001 # choose relative tolerance for VI.
+sim_N=100   # repeat 100 simulations
+M = 5 # true posterior and 4 priors
 # ceate a list with the priors
 prior = list(prior1 = list(mean_prior = c(0,0), sd_prior = c(10,10)),
              prior2 = list(mean_prior = c(0,0), sd_prior = c(10, 2)), 
@@ -73,45 +78,45 @@ K_hat=matrix(NA,sim_N,I); RMSE = matrix(NA,sim_N,(I-1))
 vi_parameter_mean = vi_parameter_sd = array(NA,c(sim_N,(I-1), 2))
 
 set.seed(1000)
-for(i in 1:I){
+for(i in 1:M){
   for(sim_n in 1:sim_N){  
-    if(i < I){
+    if(i < M){
       # Sample using VI
       fit_vb=vb(m, data=list(x=x[,2],y=as.vector(y), D=2,n=n, sd_prior = prior[[i]]$sd_prior, mean_prior = prior[[i]]$mean_prior), 
                 iter=5e5,output_samples=1e5,tol_rel_obj=tol,eta=0.05,adapt_engaged=F) 
       vb_samples=extract(fit_vb)
-      trans_parameter=cbind(vb_samples$alpha, vb_samples$beta)
-      vi_parameter_mean[sim_n,i,]=apply(trans_parameter, 2, mean)
-      vi_parameter_sd[sim_n,i,]=apply(trans_parameter, 2, sd)
-      normal_likelihood=function(trans_parameter){
+      parameter_sample=cbind(vb_samples$alpha, vb_samples$beta)
+      vi_parameter_mean[sim_n,i,]=apply(parameter_sample, 2, mean)
+      vi_parameter_sd[sim_n,i,]=apply(parameter_sample, 2, sd)
+      normal_likelihood=function(parameter_sample){
         one_data_normal_likelihood=function(vec){
           return(sum(dnorm(vec,mean=vi_parameter_mean[sim_n,i,],sd=vi_parameter_sd[sim_n,i,],  log=T)))
         }
-        return(apply(trans_parameter, 1, one_data_normal_likelihood))
+        return(apply(parameter_sample, 1, one_data_normal_likelihood))
       }
       # compule log weights
-      lp_vi=normal_likelihood(trans_parameter)
+      lp_vi=normal_likelihood(parameter_sample)
       lp_target=vb_samples$log_density
       
     } else{
       # Sample using the true posterior
-      trans_parameter=cbind(rnorm(1e5, mean_posterior[1], sqrt(cov_posterior[1,1])), rnorm(1e5, mean_posterior[2], sqrt(cov_posterior[2,2])))
-      normal_likelihood_true=function(trans_parameter){
+      parameter_sample=cbind(rnorm(1e5, mean_posterior[1], sqrt(cov_posterior[1,1])), rnorm(1e5, mean_posterior[2], sqrt(cov_posterior[2,2])))
+      normal_likelihood_true=function(parameter_sample){
         one_data_normal_likelihood=function(vec){
           return(sum(dnorm(vec[1], mean_posterior[1], sqrt(cov_posterior[1,1]), log = T) + dnorm(vec[2], mean_posterior[2], sqrt(cov_posterior[2,2]), log = T)))
         }
-        return( apply(trans_parameter, 1, one_data_normal_likelihood))
+        return( apply(parameter_sample, 1, one_data_normal_likelihood))
       }
-      normal_model=function(trans_parameter){
+      normal_model=function(parameter_sample){
         one_data_normal_likelihood=function(vec){
           return( sum( dnorm(y,mean=vec[1] + vec[2]* x[,2] ,sd=1.2,  log=T)) + dnorm(vec[1], mean0[1], sqrt(cov0[1,1]), log = T) + dnorm(vec[2], mean0[2], sqrt(cov0[2,2]), log = T))
         }
-        return( apply(trans_parameter, 1, one_data_normal_likelihood))
+        return( apply(parameter_sample, 1, one_data_normal_likelihood))
       }
       
       # compule log weights
-      lp_vi=normal_likelihood_true(trans_parameter)
-      lp_target=normal_model(trans_parameter)
+      lp_vi=normal_likelihood_true(parameter_sample)
+      lp_target=normal_model(parameter_sample)
     }
     ip_ratio=lp_target-lp_vi
     
@@ -156,7 +161,7 @@ ggsave("CI_k.png", w = 5, h = 6, device = "png", path = file.path(indir, "figure
 
 
 ## khat against RMSE ##
-df = data.frame(RMSE = as.vector(RMSE), K_hat = as.vector(K_hat[,1:(I-1)]), Prior = as.vector(sapply(1:(I-1), function(x) rep(x, sim_N))), EDS = as.vector(EDS))
+df = data.frame(RMSE = as.vector(RMSE), K_hat = as.vector(K_hat[,1:(M-1)]), Prior = as.vector(sapply(1:(M-1), function(x) rep(x, sim_N))), EDS = as.vector(EDS))
 df$Prior = as.factor(df$Prior)
 ggplot(df, aes(x = K_hat, y = RMSE, color = Prior)) +
   geom_line(size = 1)+
@@ -167,12 +172,12 @@ ggplot(df, aes(x = K_hat, y = RMSE, color = Prior)) +
 ggsave("RMSE_k.png", w = 7, h = 6, device = "png", path = file.path(indir, "figures"))
 
 
-## True posterior compared to VI posteriors 
+## True posterior compared to VI posteriors  ##
 x_beta = seq(10.5,14,0.01); x_alpha = seq(-2,7,length.out = length(x_beta))
 dff = data.frame(mean_all_alpha = c(mean_posterior[1], apply(vi_parameter_mean[,,1], 2, median)), mean_all_beta = c(mean_posterior[2], apply(vi_parameter_mean[,,2], 2, median)), 
                  sd_all_alpha = c(sqrt(diag(cov_posterior))[1], apply(vi_parameter_sd[,,1], 2, median)), sd_all_beta = c(sqrt(diag(cov_posterior))[2], apply(vi_parameter_sd[,,2], 2, median)), 
                  Posterior = c("True", paste0("Under prior", 1:(I-1))))
-df2 =   data.frame(x_alpha = rep(x_alpha, I), x_beta = rep(x_beta, I), Posterior = as.vector(sapply(c("True", paste0("Under prior", 1:(I-1))), function(x) rep(x, length(x_beta)))))
+df2 =   data.frame(x_alpha = rep(x_alpha, I), x_beta = rep(x_beta, M), Posterior = as.vector(sapply(c("True", paste0("Under prior", 1:(M-1))), function(x) rep(x, length(x_beta)))))
 dff = merge(dff, df2, by = "Posterior")
 dff = as.data.table(dff)
 dff[, den_posterior_alpha := dnorm(x_alpha, mean_all_alpha, sd_all_alpha)]
