@@ -140,7 +140,7 @@ Z_test_tot = cos(test[, -(d+1)] %*% v + matrix(nrow = N_test, ncol = 1,1) %*% b)
 #### REGRESSION - CODE ####
 
 reg = function(D, train, test){
-  # RFF using least norm (approximated with ridge), ridge, lasso and no link function
+  # RFF using least norm (approximated with ridge), ridge, lasso and identity link function
   
   # intermediary features (RFF)
   Z = sqrt(2/D)*Z_tot[, 1:D]
@@ -249,7 +249,7 @@ reg2 = function(D, train, test){
 }
 
 reg3 = function(D, train, test){
-  # RFF using least norm (approximated with ridge), ridge, lasso and a logit link
+  # RFF using least norm (approximated with ridge), ridge, lasso and logit link function
   
   # intermediary features (RFF)
   Z = sqrt(2/D)*Z_tot[, 1:D]
