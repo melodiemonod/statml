@@ -1,15 +1,13 @@
 
 library("glmnet")
 library("MASS")
-library("gridExtra")
-library("ggplot2")
 library("doParallel")
 registerDoParallel()
 
 #### DOUBLE DESCENT CURVE ####
 # This file intend to replicate RFF results obtained in Belkin et al. 2018
 
-#home directory
+#  directory
 indir = "~/Documents/PhD/Modules/Machine_learning/code"
 
 #### LOAD DATASETS ####

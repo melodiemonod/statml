@@ -1,10 +1,18 @@
+library("gridExtra")
+library("ggplot2")
 
-D_grid = c(seq(2, 900, 50), c(1, 3, 6, 9, 10, 11, 13, 15, 20)*10^3)
+#### DOUBLE DESCENT CURVE ####
+# This file intend to replicate RFF results obtained in Belkin et al. 2018
 
-load(file.path("~/Documents/PhD/Modules/Machine_Learning/code/res"))
+#  directory
+indir = "~/Documents/PhD/Modules/Machine_learning/code"
 
 #### PLOTS #### 
+
+load(file.path(indir, "res"))
+
 lambdas = c(1000, 100,  30, 10, 3, 1, 0.3, 0.1, 0.03, 0.01, 0.001, 0.0001); lambda_ls = 1e-14
+D_grid = c(seq(2, 900, 100), c(1, 2,4,5,7,10,13,15,20)*10^3)
 df= unlist(res)
 tmp = data.frame(method = c(rep("LS", length(D_grid)), rep(paste("Ridge lambda =", round(lambdas, digits = 4)), length(D_grid)) , rep(paste("Lasso lambda =", round(lambdas, digits = 4)), length(D_grid))), 
                  D = c(D_grid, rep(as.vector(sapply(D_grid, function(x) rep(x, length(lambdas)))), 2)), 
@@ -67,7 +75,7 @@ p6.ridge = ggplot(tmp[grepl("Ridge", tmp$method),], aes(x = D, color = factor(me
   labs(color = "Method")
 
 plot_ridge = grid.arrange(p1.ridge, p2.ridge, p3.ridge, p4.ridge, p5.ridge, p6.ridge, nrow = 3, ncol =2, heights = c(4, 3, 3))
-ggsave(plot = plot_ridge, w = 13, h = 10, device = "pdf", filename  = "~/Documents/PhD/Modules/Machine_Learning/code/plot_ridge.pdf")
+ggsave(plot = plot_ridge, w = 13, h = 10, device = "pdf", filename  = file.path(indir,"plot_ridge.pdf"))
 
 
 p1.lasso = ggplot(tmp[grepl("Lasso", tmp$method),], aes(x = D, color = factor(method, levels = paste("Lasso lambda =", round(lambdas, digits = 4))))) +
@@ -121,14 +129,14 @@ p6.lasso = ggplot(tmp[grepl("Lasso", tmp$method),], aes(x = D, color = factor(me
   labs(color = "Method")
 
 plot_lasso = grid.arrange(p1.lasso, p2.lasso, p3.lasso, p4.lasso, p5.lasso, p6.lasso, nrow = 3, ncol =2, heights = c(4, 3, 3))
-ggsave(plot = plot_lasso, w = 13, h = 10, device = "pdf", filename  = "~/Documents/PhD/Modules/Machine_Learning/code/plot_lasso.pdf")
+ggsave(plot = plot_lasso, w = 13, h = 10, device = "pdf", filename  = file.path(indir,"plot_lasso.pdf"))
 
 
 
 p1.ls = ggplot(tmp[grepl("LS", tmp$method),], aes(x = D, color = method)) +
   geom_line(aes(y = ZOL_test)) +
   geom_point(aes(y = ZOL_test), shape = 4) +
-  labs(title = "Zero One Loss - LS") +
+  labs(title = "Zero One Loss - Least norm") +
   theme_bw() +
   ylab("Test (%)") +
   theme(axis.title.x=element_blank())
@@ -136,7 +144,7 @@ p1.ls = ggplot(tmp[grepl("LS", tmp$method),], aes(x = D, color = method)) +
 p2.ls = ggplot(tmp[grepl("LS", tmp$method),], aes(x = D, color = method)) +
   geom_line(aes(y = MSE_test))+
   geom_point(aes(y = MSE_test), shape = 4)+
-  labs(title = "Mean Squared Error - LS")+
+  labs(title = "Mean Squared Error - Least norm")+
   theme_bw() +
   ylab("Test") +
   theme(axis.title.x=element_blank())
@@ -170,4 +178,4 @@ p6.ls = ggplot(tmp[grepl("LS", tmp$method),], aes(x = D, color = method)) +
   xlab("Number of Random Fourier Features (N)") 
 
 plot_ls = grid.arrange(p1.ls, p2.ls, p3.ls, p4.ls, p5.ls, p6.ls, nrow = 3, ncol =2, heights = c(4, 3, 3))
-ggsave(plot = plot_ls, w = 13, h = 10, device = "pdf", filename  = "~/Documents/PhD/Modules/Machine_Learning/code/plot_ls.pdf")
+ggsave(plot = plot_ls, w = 13, h = 10, device = "pdf", filename  = file.path(indir,"plot_leastnorm.pdf"))
