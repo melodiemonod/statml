@@ -47,7 +47,7 @@ p1.lasso = ggplot(tmp[grepl("Lasso", tmp$method),], aes(x = D, color = factor(me
   labs(title = "Lasso - Logit link function")+
   theme_bw() +
   ylab("Mean Squared Error Test") +
-  theme(axis.title.x=element_blank(), legend.position = "none")+ 
+  theme(axis.title.x=element_blank(), legend.position = "none", text = element_text(size=18))+ 
   labs(color = "Method")
 
 p2.lasso = ggplot(tmp[grepl("Lasso", tmp$method),], aes(x = D, color = factor(method, levels = paste("Lasso lambda =", round(lambdas, digits = 4))))) +
@@ -55,7 +55,7 @@ p2.lasso = ggplot(tmp[grepl("Lasso", tmp$method),], aes(x = D, color = factor(me
   geom_point(aes(y = L2_norm_l), shape = 4)+
   theme_bw()+
   ylab("Norm") +
-  theme(axis.title.x=element_blank(), legend.position = "none")+ 
+  theme(axis.title.x=element_blank(), legend.position = "none", text = element_text(size=18))+ 
   labs(color = "Method")
 
 p3.lasso = ggplot(tmp[grepl("Lasso", tmp$method),], aes(x = D, color = factor(method, levels = paste("Lasso lambda =", round(lambdas, digits = 4))))) +
@@ -65,7 +65,7 @@ p3.lasso = ggplot(tmp[grepl("Lasso", tmp$method),], aes(x = D, color = factor(me
   ylab("Mean Squared Error Train") +
   xlab("Number of Random Fourier Features (N)") + 
   labs(color = "Method")+ 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", text = element_text(size=18))
 plot_lasso = grid.arrange(p1.lasso, p2.lasso, p3.lasso,nrow = 3, ncol =1)
 ggsave(plot = plot_lasso, w = 7.5, h = 12, device = "pdf", filename  = file.path(indir,"plot_lasso.pdf"))
 
@@ -76,7 +76,7 @@ p1.ridge = ggplot(tmp[grepl("Ridge", tmp$method),], aes(x = D, color = factor(me
   labs(title = "Ridge - Logit link function")+
   theme_bw() +
   ylab("Test") +
-  theme(axis.title.x=element_blank(), legend.position = "none")+ 
+  theme(axis.title.x=element_blank(), legend.position = "none", text = element_text(size=18))+ 
   labs(color = "Method") +
   ylab("Mean Squared Error Test") 
 
@@ -85,7 +85,7 @@ p2.ridge = ggplot(tmp[grepl("Ridge", tmp$method),], aes(x = D, color = factor(me
   geom_point(aes(y = L2_norm_l), shape = 4)+
   theme_bw()+
   ylab("Norm") +
-  theme(axis.title.x=element_blank(), legend.position = "none")+ 
+  theme(axis.title.x=element_blank(), legend.position = "none", text = element_text(size=18))+ 
   labs(color = "Method")
 
 p3.ridge =   ggplot(tmp[grepl("Ridge", tmp$method),], aes(x = D, color = factor(method, levels = paste("Ridge lambda =", round(lambdas, digits = 4))))) +
@@ -95,7 +95,7 @@ p3.ridge =   ggplot(tmp[grepl("Ridge", tmp$method),], aes(x = D, color = factor(
   ylab("Mean Squared Error Train") +
   xlab("Number of Random Fourier Features (N)") + 
   labs(color = "Method")+
-  theme(axis.title.x=element_blank(), legend.position = "bottom")
+  theme(axis.title.x=element_blank(), legend.position = "bottom", text = element_text(size=18))
 plot_ridge = grid.arrange(p1.ridge, p2.ridge, p3.ridge, nrow = 3, ncol =1)
 ggsave(plot = plot_ridge, w = 7.5, h = 12, device = "pdf", filename  = file.path(indir,"plot_ridge.pdf"))
 
@@ -107,7 +107,7 @@ p1.ls = ggplot(tmp2[grepl("LS", tmp2$method),], aes(x = D, color = method)) +
   labs(title = "Least norm - Analytical solution") +
   theme_bw() +
   ylab("Mean squared Error Test") +
-  theme(axis.title.x=element_blank(), legend.position = "none")
+  theme(axis.title.x=element_blank(), legend.position = "none", text = element_text(size=18))
 
 p2.ls = ggplot(tmp[grepl("LS", tmp$method),], aes(x = D, color = method)) +
   geom_line(aes(y = log(MSE_test_i))) +
@@ -115,21 +115,21 @@ p2.ls = ggplot(tmp[grepl("LS", tmp$method),], aes(x = D, color = method)) +
   labs(title = expression("Least norm - Ridge approximation", lambda, " = 1e-20")) +
   theme_bw() +
   ylab("Mean squared Error Test") +
-  theme(axis.title.x=element_blank(), legend.position = "none")
+  theme(axis.title.x=element_blank(), legend.position = "none", text = element_text(size=18))
 
 p3.ls =  ggplot(tmp2[grepl("LS", tmp2$method),], aes(x = D, color = method)) +
   geom_line(aes(y = log(L2_norm)))+
   geom_point(aes(y = log(L2_norm)), shape = 4) +
   theme_bw()+
   ylab("Norm") +
-  theme(axis.title.x=element_blank(), legend.position = "none")
+  theme(axis.title.x=element_blank(), legend.position = "none", text = element_text(size=18))
 
 p4.ls =  ggplot(tmp[grepl("LS", tmp$method),], aes(x = D, color = method)) +
   geom_line(aes(y = log(L2_norm_i)))+
   geom_point(aes(y = log(L2_norm_i)), shape = 4) +
   theme_bw()+
   ylab("Norm") +
-  theme(axis.title.x=element_blank(), legend.position = "none")
+  theme(axis.title.x=element_blank(), legend.position = "none", text = element_text(size=18))
 
 p5.ls = ggplot(tmp2[grepl("LS", tmp2$method),], aes(x = D, color = method)) +
   geom_line(aes(y = MSE_training))+
@@ -145,7 +145,7 @@ p6.ls = ggplot(tmp[grepl("LS", tmp$method),], aes(x = D, color = method)) +
   theme_bw()+
   ylab("Mean squared Error Train") +
   xlab("Number of Random Fourier Features (N)")  +
-  theme(legend.position = "none")
+  theme(legend.position = "none", text = element_text(size=18))
 
 plot_ls = grid.arrange(p1.ls, p2.ls, p3.ls, p4.ls, p5.ls, p6.ls, nrow = 3, ncol =2, heights = c(4, 3, 3))
 ggsave(plot = plot_ls, w = 10, h = 10, device = "pdf", filename  = file.path(indir,"plot_leastnorm.pdf"))
