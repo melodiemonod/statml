@@ -5,7 +5,7 @@ library("doParallel")
 registerDoParallel()
 
 #### DOUBLE DESCENT CURVE ####
-# This file intend to replicate RFF results obtained in Belkin et al. 2018
+# This file is intended to replicate RFF results obtained in Belkin et al. 2018
 
 #  directory
 indir = "~/Documents/PhD/Modules/Machine_learning/code"
