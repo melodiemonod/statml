@@ -104,27 +104,8 @@ train = create_dummy(train)
 test = create_dummy(test)
 
 
-#### FIND OPTIMUM LAMBDA FOR LEAST SQUARE SUBJECT TO MIN L2 NORM ####
-# intermediary features
-train = as.matrix(train); test = as.matrix(test)
-D = 1000 # number of random fourrier features
-set.seed(987) # algorithm from  Rahimi and Recht(2008) 
-v = matrix(nrow = d, ncol = D, rnorm(D*d))
-b = 2 * pi * runif(D, 0, 1);
-Z = sqrt(2/D)*cos(train[, 1:d] %*% v + matrix(nrow = N_training, ncol = 1,1) %*% b);
-
-lambda_grid = 10^seq(-20, -6, 1)
-# diff between true parameters and approximation with Ridge
-diff = foreach(i = 1:10) %dopar% {
-  apply(matrix(ncol = length(lambda_grid), byrow = F, rep(ginv(Z) %*% train[, d+1+i], length(lambda_grid))) - coef(cv.glmnet(x = Z, y = train[,d+1+i], alpha = 0, lambda = lambda_grid, intercept = F), s = lambda_grid)[-1,], 2, function(x) sum(x)^2)  
-}
-lambda_ls = numeric(10)
-for(i in 1:10){
-  lambda_ls[i] = lambda_grid[which.min(diff[[i]])]
-}
-
-#[1] 1e-20 1e-16 1e-16 1e-18 1e-16 1e-16 1e-17 1e-15 1e-20 1e-16
-#lambda_ls = c(1e-20, 1e-16, 1e-16, 1e-18, 1e-16, 1e-16, 1e-17 ,1e-15, 1e-20, 1e-16)
+#### FIX SMALL LAMBDA FOR LEAST SQUARE SUBJECT TO MIN L2 NORM ####
+lambda_ls = 1e-20
 
 
 #### PREPARE INTERMEDIARY FEATURES ####
@@ -146,9 +127,9 @@ reg = function(D, train, test){
   Z = sqrt(2/D)*Z_tot[, 1:D]
   Z_test = sqrt(2/D)*Z_test_tot[, 1:D]
   
-  # Square loss function subject to minimum L2 norm (using small L2 penalty)
+  # Least norm solution (approximated with ridge and small L2 penalty)
   glmnet.ls = function(i){
-    glmnet(x = Z, y = train[,d+1+i], alpha = 0, lambda = lambdas, intercept = F, family = "binomial")
+    glmnet(x = Z, y = train[,d+1+i], alpha = 0, lambda = lambda_ls, intercept = F, family = "binomial")
   }
   cv_fit.ls = mclapply(1:10, function(x) glmnet.ls(x), mc.cores = 1)
   alpha_ls = cbind(coef(cv_fit.ls[[1]]), coef(cv_fit.ls[[2]]), coef(cv_fit.ls[[3]]), coef(cv_fit.ls[[4]]), coef(cv_fit.ls[[5]]), coef(cv_fit.ls[[6]]), coef(cv_fit.ls[[7]]), coef(cv_fit.ls[[8]]), coef(cv_fit.ls[[9]]), coef(cv_fit.ls[[10]]))
@@ -216,7 +197,7 @@ reg = function(D, train, test){
 }
 
 reg2 = function(D, train, test){
-  # RFF using least norm (true solution)
+  # RFF using least norm with analytical form 
   
   # intermediary features
   Z = sqrt(2/D)*Z_tot[, 1:D]
@@ -245,35 +226,16 @@ reg2 = function(D, train, test){
   ZOL_train.ls = mean(as.integer(train[,d+1]) != apply(matrix(unlist(prob_training.ls), nrow = N_training, byrow = F), 1, which.max))
   ZOL_test.ls = mean(as.integer(test[,d+1]) != apply(matrix(unlist(prob_test.ls), nrow = N_test, byrow = F), 1, which.max))
   
-  return(list(ls = list(L2_norm = L2_norm.ls, ZOL_train = ZOL_train.ls, ZOL_test = ZOL_test.ls, MSE_train = MSE_train.ls, MSE_test = MSE_test.ls, SE_train = SE_train.ls, SE_test = SE_test.ls)))
+  return(list(ls = list(L2_norm = L2_norm.ls, ZOL_train = ZOL_train.ls, ZOL_test = ZOL_test.ls, MSE_train = MSE_train.ls, MSE_test = MSE_test.ls, 
+                        SE_train = SE_train.ls, SE_test = SE_test.ls)))
 }
 
 reg3 = function(D, train, test){
-  # RFF using least norm (approximated with ridge), ridge, lasso and logit link function
+  # RFF using ridge and lasso with logit link function
   
   # intermediary features (RFF)
   Z = sqrt(2/D)*Z_tot[, 1:D]
   Z_test = sqrt(2/D)*Z_test_tot[, 1:D]
-  
-  # Square loss function subject to minimum L2 norm (using small L2 penalty)
-  glmnet.ls = function(i){
-    glmnet(x = Z, y = train[,d+1+i], alpha = 0, lambda = 10^(-20), intercept = F, family = "binomial")
-  }
-  cv_fit.ls = mclapply(1:10, function(x) glmnet.ls(x), mc.cores = 1)
-  alpha_ls = cbind(coef(cv_fit.ls[[1]]), coef(cv_fit.ls[[2]]), coef(cv_fit.ls[[3]]), coef(cv_fit.ls[[4]]), coef(cv_fit.ls[[5]]), coef(cv_fit.ls[[6]]), coef(cv_fit.ls[[7]]), coef(cv_fit.ls[[8]]), coef(cv_fit.ls[[9]]), coef(cv_fit.ls[[10]]))
-  L2_norm.ls = sum(apply(alpha_ls, 1, mean)^2)
-  prob_training.ls = cbind(predict(cv_fit.ls[[1]], newx = Z, type="response"), predict(cv_fit.ls[[2]], newx = Z, type="response"), predict(cv_fit.ls[[3]], newx = Z, type="response"), predict(cv_fit.ls[[4]], newx = Z, type="response"), 
-                           predict(cv_fit.ls[[5]], newx = Z, type="response"), predict(cv_fit.ls[[6]], newx = Z, type="response"), predict(cv_fit.ls[[7]], newx = Z, type="response"),
-                           predict(cv_fit.ls[[8]], newx = Z, type="response"), predict(cv_fit.ls[[9]], newx = Z, type="response"), predict(cv_fit.ls[[10]], newx = Z, type="response"))
-  prob_test.ls = cbind(predict(cv_fit.ls[[1]], newx = Z_test, type="response"), predict(cv_fit.ls[[2]], newx = Z_test, type="response"), predict(cv_fit.ls[[3]], newx = Z_test, type="response"), predict(cv_fit.ls[[4]], newx = Z_test, type="response"),
-                       predict(cv_fit.ls[[5]], newx = Z_test, type="response"), predict(cv_fit.ls[[6]], newx = Z_test, type="response"), 
-                       predict(cv_fit.ls[[7]], newx = Z_test, type="response"), predict(cv_fit.ls[[8]], newx = Z_test, type="response"), predict(cv_fit.ls[[9]], newx = Z_test, type="response"), predict(cv_fit.ls[[10]], newx = Z_test, type="response"))
-  MSE_train.ls = mean(as.matrix(train[, (d+2):(d+11)] - prob_training.ls)^2)
-  MSE_test.ls = mean(as.matrix(train[, (d+2):(d+11)] - prob_test.ls)^2)
-  SE_train.ls = sum((train[, (d+2):(d+11)] - prob_training.ls)^2)
-  SE_test.ls = sum((train[, (d+2):(d+11)] - prob_test.ls)^2)
-  ZOL_train.ls = mean(as.integer(train[,d+1]) != apply(prob_training.ls, 1, which.max))
-  ZOL_test.ls = mean(as.integer(test[,d+1]) != apply(prob_test.ls, 1, which.max))
   
   # Ridge
   lambdas = c(1000, 100,  30, 10, 3, 1, 0.3, 0.1, 0.03, 0.01, 0.001, 0.0001)
@@ -326,13 +288,13 @@ reg3 = function(D, train, test){
   SE_test.lasso = sapply(lambdas, function(x) sum((test[, (d+2):(d+11)] - prob_test.lasso(x))^2))
   
   return(list(ls = list(L2_norm = L2_norm.ls,
-                        ZOL_train = ZOL_train.ls, ZOL_test = ZOL_test.ls, MSE_train = MSE_train.ls, MSE_test = MSE_test.ls),
+                        ZOL_train = ZOL_train.ls, ZOL_test = ZOL_test.ls, MSE_train = MSE_train.ls, MSE_test = MSE_test.ls, SE_train = SE_train.ls, SE_test = SE_test.ls),
               ridge = list(lambda_min = lambda_min.ridge,
                            L2_norm = L2_norm.ridge,
-                           ZOL_train = ZOL_train.ridge, ZOL_test = ZOL_test.ridge, MSE_train = MSE_train.ridge, MSE_test = MSE_test.ridge),
+                           ZOL_train = ZOL_train.ridge, ZOL_test = ZOL_test.ridge, MSE_train = MSE_train.ridge, MSE_test = MSE_test.ridge, SE_train = SE_train.ridge, SE_test = SE_test.ridge),
               lasso = list(lambda_min = lambda_min.lasso,
                            L2_norm = L2_norm.lasso,
-                           ZOL_train = ZOL_train.lasso, ZOL_test = ZOL_test.lasso, MSE_train = MSE_train.lasso, MSE_test = MSE_test.lasso)))
+                           ZOL_train = ZOL_train.lasso, ZOL_test = ZOL_test.lasso, MSE_train = MSE_train.lasso, MSE_test = MSE_test.lasso, SE_train = SE_train.lasso, SE_test = SE_test.lasso)))
 }
 
 
