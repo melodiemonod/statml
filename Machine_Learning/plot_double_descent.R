@@ -67,7 +67,7 @@ p3.lasso = ggplot(tmp[grepl("Lasso", tmp$method),], aes(x = D, color = factor(me
   theme(legend.position = "bottom", text = element_text(size=18))+
   guides(color=guide_legend(nrow=4,byrow=TRUE))
 plot_lasso = grid.arrange(p1.lasso, p2.lasso, p3.lasso,nrow = 3, ncol =1, heights = c(4,4,6))
-ggsave(plot = plot_lasso, w = 9, h = 12, device = "pdf", filename  = file.path(indir,"plot_lasso.pdf"))
+ggsave(plot = plot_lasso, w = 9, h = 14, device = "pdf", filename  = file.path(indir,"plot_lasso.pdf"))
 
 
 p1.ridge = ggplot(tmp[grepl("Ridge", tmp$method),], aes(x = D, color = factor(method, levels = paste("Ridge lambda =", round(lambdas, digits = 4))))) +
@@ -98,7 +98,7 @@ p3.ridge =   ggplot(tmp[grepl("Ridge", tmp$method),], aes(x = D, color = factor(
   theme(axis.title.x=element_blank(), legend.position = "bottom", text = element_text(size=18))+
   guides(color=guide_legend(nrow=4,byrow=TRUE))
 plot_ridge = grid.arrange(p1.ridge, p2.ridge, p3.ridge, nrow = 3, ncol =1, heights = c(4,4,6))
-ggsave(plot = plot_ridge, w = 9, h = 12, device = "pdf", filename  = file.path(indir,"plot_ridge.pdf"))
+ggsave(plot = plot_ridge, w = 9, h = 14, device = "pdf", filename  = file.path(indir,"plot_ridge.pdf"))
 
 
 
