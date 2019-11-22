@@ -5,11 +5,11 @@ library("ggplot2")
 # This file intend to replicate RFF results obtained in Belkin et al. 2018
 
 #  directory
-indir = "~/Documents/PhD/Modules/Machine_learning/code"
+indir = "~/Documents/PhD/Modules/Machine_Learning/code"
 
 #### PLOTS #### 
 
-load(file.path(indir, "res"))
+load(file.path(indir, "res1"))
 df= unlist(res)
 load(file.path(indir, "res2"))
 df2= unlist(res)
@@ -31,7 +31,6 @@ tmp = data.frame(method = c(rep("LS", length(D_grid)), rep(paste("Ridge lambda =
                  L2_norm_i = c(df[grepl( "ls.L2_norm", names(df))], df[grepl( "ridge.L2_norm", names(df))], df[grepl( "lasso.L2_norm", names(df))]), 
                  L2_norm_l = c(df2[grepl( "ls.L2_norm", names(df2))], df2[grepl( "ridge.L2_norm", names(df2))], df2[grepl( "lasso.L2_norm", names(df2))]))
 
-D_grid = c(seq(2, 900, 50), c(1, 3, 6, 9, 10, 11, 13, 15, 20)*10^3)
 tmp2 = data.frame(method = c(rep("LS", length(D_grid))), 
                   D = c(D_grid), 
                   MSE_training  = c(df3[grepl( "ls.MSE_train", names(df3))]),
@@ -65,9 +64,10 @@ p3.lasso = ggplot(tmp[grepl("Lasso", tmp$method),], aes(x = D, color = factor(me
   ylab("Mean Squared Error Train") +
   xlab("Number of Random Fourier Features (N)") + 
   labs(color = "Method")+ 
-  theme(legend.position = "bottom", text = element_text(size=18))
-plot_lasso = grid.arrange(p1.lasso, p2.lasso, p3.lasso,nrow = 3, ncol =1)
-ggsave(plot = plot_lasso, w = 7.5, h = 12, device = "pdf", filename  = file.path(indir,"plot_lasso.pdf"))
+  theme(legend.position = "bottom", text = element_text(size=18))+
+  guides(color=guide_legend(nrow=4,byrow=TRUE))
+plot_lasso = grid.arrange(p1.lasso, p2.lasso, p3.lasso,nrow = 3, ncol =1, heights = c(4,4,6))
+ggsave(plot = plot_lasso, w = 9, h = 12, device = "pdf", filename  = file.path(indir,"plot_lasso.pdf"))
 
 
 p1.ridge = ggplot(tmp[grepl("Ridge", tmp$method),], aes(x = D, color = factor(method, levels = paste("Ridge lambda =", round(lambdas, digits = 4))))) +
@@ -95,9 +95,10 @@ p3.ridge =   ggplot(tmp[grepl("Ridge", tmp$method),], aes(x = D, color = factor(
   ylab("Mean Squared Error Train") +
   xlab("Number of Random Fourier Features (N)") + 
   labs(color = "Method")+
-  theme(axis.title.x=element_blank(), legend.position = "bottom", text = element_text(size=18))
-plot_ridge = grid.arrange(p1.ridge, p2.ridge, p3.ridge, nrow = 3, ncol =1)
-ggsave(plot = plot_ridge, w = 7.5, h = 12, device = "pdf", filename  = file.path(indir,"plot_ridge.pdf"))
+  theme(axis.title.x=element_blank(), legend.position = "bottom", text = element_text(size=18))+
+  guides(color=guide_legend(nrow=4,byrow=TRUE))
+plot_ridge = grid.arrange(p1.ridge, p2.ridge, p3.ridge, nrow = 3, ncol =1, heights = c(4,4,6))
+ggsave(plot = plot_ridge, w = 9, h = 12, device = "pdf", filename  = file.path(indir,"plot_ridge.pdf"))
 
 
 
