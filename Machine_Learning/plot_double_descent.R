@@ -138,7 +138,7 @@ p5.ls = ggplot(tmp2[grepl("LS", tmp2$method),], aes(x = D, color = method)) +
   theme_bw()+
   ylab("Mean squared Error Train") +
   xlab("Number of Random Fourier Features (N)") +
-  theme(legend.position = "none")
+  theme(legend.position = "none", text = element_text(size=18))
 
 p6.ls = ggplot(tmp[grepl("LS", tmp$method),], aes(x = D, color = method)) +
   geom_line(aes(y = MSE_training_i))+
