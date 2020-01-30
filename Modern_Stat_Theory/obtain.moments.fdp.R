@@ -1,6 +1,6 @@
 
 ## Analytical moments of FDP using Benjamini-H method
-indir = "~/git/multitest"
+indir = "~/git/statml/Modern_Stat_Theory"
 
 source(file = file.path(indir,"utils.R")) # Functions used in this analysis
 
@@ -13,6 +13,7 @@ library("tidyverse")
 
 doParallel::registerDoParallel()
 
+pfdp(.7, 10, .5, function(y) F1(y, n=1, delta_random = F, delta = 1))
 ## moments
 # diff m 
 n = 10; m = c(10,100,1000); delta = 1
@@ -43,7 +44,7 @@ n = 10; m = 10; delta = 1; pi0 = c(0,0.2,0.5,0.8,1)
 moments.fdp_pi = foreach(i = pi0) %dopar% {
   moments(m = m, pi0 = i, F1 = function(y) F1(y, n=n, delta_random = F, delta = delta))
 }
-moments.fdp_pi = t(matrix(ncol = length(pi0), nrow  = 2, round(unlist(moments.fdp_pi), digits = 6)))
+moments.fdp_pi = t(matrix(ncol = length(pi0), nrow  = 2, round(unlist(moments.fdp_pi), digits = 4)))
 colnames(moments.fdp_pi) = c("Expectation", "Variance")
-rownames(moments.fdp_pi) = delta
+rownames(moments.fdp_pi) = pi0
 

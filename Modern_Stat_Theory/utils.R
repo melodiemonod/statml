@@ -2,7 +2,7 @@ F1 = function(x, n, delta=NULL, delta_random = F, theta = NULL, tau = NULL)
 {
   #distribution of the p values under the alternative
   
-  ifelse(delta_random == F, return(1 - pnorm(qnorm(x), sqrt(n)*delta)),
+  ifelse(delta_random == F, return(1 - pnorm(qnorm(x) - sqrt(n)*delta)),
          return(1 - pnorm((qnorm(x) - sqrt(n)*theta)/(tau^2*n + 1)^(1/2))))
 }
 
@@ -21,9 +21,9 @@ pfdp = function(x, m, pi0, F1)
     return(Psi[length(t)+1])
   }
   
-  part1 = function(k,j) choose(k,j) * (pi0*F0(t[k])/G(t[k]))^j * ((1 - pi0)*F1(t[k])/G(t[k]))^(k-1)
-  part2 = function(t,k) choose(m,k) * (t[k])^k *bolshev.rec(m-k,1 - t[m:(k+1)])
-  part2res = as.vector(unlist(sapply(0:(m-1), function(k) part2(G(t[1:m]), k))))
+  part1 = function(k,j) choose(k,j) * (pi0*F0(t[k])/G(t[k]))^j * ((1 - pi0)*F1(t[k])/G(t[k]))^(k-j)
+  part2 = function(k) choose(m,k) * G(ifelse(k ==0, 1, (t[k])))^k * ifelse(k == m, 1, bolshev.rec(m-k,1 - G(t[m:(k+1)])))
+  part2res = as.vector(unlist(sapply(0:(m-1), function(k) part2(k))))
   part2res[m] =  choose(m,m) * (G(t[m]))^m *1
   prob = function(k,j) part1(k,j)*part2res[k]
   df = data.table(k = unlist(sapply(0:m, function(k) rep(k, 1+floor(x*k)))),
@@ -44,7 +44,7 @@ power = function(F1)
     mutate(lprob := mcmapply(lprob, k))
   sum(exp(df$lprob))
 }
-G = function(tk) pi0*F0(tk) + (1-pi0)*F1(tk ,n=1, delta_random = F, delta = 1)
+
 moments = function(m, F1, pi0){
   F0 = function(x) punif(x, 0, 1); t = 0.05*1:m/m
   G = function(tk) pi0*F0(tk) + (1-pi0)*F1(tk)
@@ -59,9 +59,9 @@ moments = function(m, F1, pi0){
   
   ## first moment
   part1 = choose(m, m-1) * pi0 
-  part2 = function(k)  F0(t[k])/k 
-  part3 = function(t,k) ifelse(k ==0, 1, choose(m,k) * (t[k])^k *bolshev.rec(m-k,1 - t[m:(k+1)]))
-  comp = function(k) part2(k)*part3(G(t[1:m]), k-1)
+  part2 = function(k)  F0(ifelse(k==0, 0, t[k]))/k 
+  part3 = function(k) choose(m,k) * G(ifelse(k ==0, 1, (t[k])))^k * ifelse(k == m, 1, bolshev.rec(m-k,1 - G(t[m:(k+1)])))
+  comp = function(k) part2(k)*part3(k-1)
   df = data.table(k = 1:m) %>%
     mutate(value := mcmapply(comp, k))
   firstmoment = part1*sum(unlist(df$value))
@@ -70,11 +70,11 @@ moments = function(m, F1, pi0){
   # l =1
   part1a = choose(m, m-1) * pi0 
   part2a = function(k)  F0(t[k])/(k^2) 
-  compa = function(k) part2a(k)*part3(G(t[1:m]), k-1)
+  compa = function(k) part2a(k)*part3( k-1)
   # l = 2
   part1b = choose(m, m-2) * pi0^2 
   part2b = function(k)  (F0(t[k])^2)/(k^2) 
-  compb = function(k) part2b(k)*part3(G(t[1:m]), k-2)
+  compb = function(k) part2b(k)*part3( k-2)
   df = data.table(k = 1:m) %>%
     mutate(valuea := mcmapply(compa, k), 
            valueb := mcmapply(compb, k))
